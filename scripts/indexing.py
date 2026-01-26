@@ -58,6 +58,7 @@ class ChunkEntry:
     indexed_by: str
     num_peaks: int
     num_crystals: int
+    num_reflections: int
 
 
 class StreamIndex:
@@ -131,7 +132,7 @@ class StreamIndex:
 
         # Entries as compact arrays (position omitted — equals array index)
         # [start_offset, end_offset, filename_idx, event, serial, hit,
-        #  indexed_by_idx, num_peaks, num_crystals]
+        #  indexed_by_idx, num_peaks, num_crystals, num_reflections]
         compact = []
         for e in self.entries:
             compact.append([
@@ -144,6 +145,7 @@ class StreamIndex:
                 ib_to_idx[e.indexed_by],
                 e.num_peaks,
                 e.num_crystals,
+                e.num_reflections,
             ])
 
         data = {
@@ -188,6 +190,7 @@ class StreamIndex:
                 indexed_by=indexed_by_vals[arr[6]],
                 num_peaks=arr[7],
                 num_crystals=arr[8],
+                num_reflections=arr[9] if len(arr) > 9 else 0,
             ))
         index.entries = entries
 
@@ -265,6 +268,7 @@ class StreamIndex:
         )
         n_crystals = sum(e.num_crystals for e in self.entries)
         total_peaks = sum(e.num_peaks for e in self.entries)
+        total_reflections = sum(e.num_reflections for e in self.entries)
 
         return {
             "stream_path": self.stream_path,
@@ -277,6 +281,7 @@ class StreamIndex:
             "index_rate": n_indexed / n,
             "total_crystals": n_crystals,
             "total_peaks": total_peaks,
+            "total_reflections": total_reflections,
         }
 
 
@@ -326,15 +331,31 @@ def _scan_chunk_metadata_mmap(
     except (ValueError, TypeError):
         num_peaks = 0
 
-    # Count crystals by finding all "--- Begin crystal" markers
+    # Count crystals and sum num_reflections in a single pass.
+    # We record each crystal start position, then search for the
+    # "num_reflections = " marker only from those positions forward
+    # (it appears once per crystal, shortly after the crystal header).
     num_crystals = 0
+    num_reflections = 0
+    refl_marker = b"num_reflections = "
     search_pos = chunk_start
     while True:
-        found = buf.find(CRYSTAL_START_B, search_pos, chunk_end)
-        if found == -1:
+        crystal_pos = buf.find(CRYSTAL_START_B, search_pos, chunk_end)
+        if crystal_pos == -1:
             break
         num_crystals += 1
-        search_pos = found + len(CRYSTAL_START_B)
+        # Search for num_reflections starting from this crystal header
+        found = buf.find(refl_marker, crystal_pos, chunk_end)
+        if found != -1:
+            val_start = found + len(refl_marker)
+            val_end = buf.find(b"\n", val_start, chunk_end)
+            if val_end == -1:
+                val_end = chunk_end
+            try:
+                num_reflections += int(buf[val_start:val_end].strip())
+            except (ValueError, TypeError):
+                pass
+        search_pos = crystal_pos + len(CRYSTAL_START_B)
 
     return ChunkEntry(
         position=position,
@@ -347,6 +368,7 @@ def _scan_chunk_metadata_mmap(
         indexed_by=indexed_by,
         num_peaks=num_peaks,
         num_crystals=num_crystals,
+        num_reflections=num_reflections,
     )
 
 
@@ -441,6 +463,7 @@ def main():
         print(f"Indexed:    {stats['num_indexed']:,} ({stats['index_rate']:.1%})")
         print(f"Crystals:   {stats['total_crystals']:,}")
         print(f"Peaks:      {stats['total_peaks']:,}")
+        print(f"Reflections:{stats['total_reflections']:,}")
 
     elif args.command == "get":
         index = StreamIndex.load(args.index_file)
