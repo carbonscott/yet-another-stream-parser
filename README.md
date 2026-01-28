@@ -2,7 +2,7 @@
 
 Memory-efficient CrystFEL stream file parsing and indexing.
 
-**Demo:** [marimo.app](https://static.marimo.app/static/yasp-cjg6) | **Notebook:** [examples/demo.py](examples/demo.py)
+**Demo:** [marimo.app](https://static.marimo.app/static/crystfel-yasp-64tt) | **Notebook:** [examples/demo.py](examples/demo.py)
 
 ## CLI Usage
 
@@ -70,4 +70,26 @@ chunk = index.get_chunk_by_serial(12345)
 for entry in index.filter(min_crystals=1):
     chunk = index.get_chunk(entry.position)
     print(f"Serial {chunk.serial}: {len(chunk.crystals)} crystals")
+```
+
+## Local Development
+
+Install the package locally in editable mode:
+
+```bash
+cd /path/to/stream-stuff
+uv pip install -e ".[numpy]"
+```
+
+Run CLI commands:
+
+```bash
+crystfel-yasp info file.stream.idx
+```
+
+Run the demo notebook (uses local package instead of git):
+
+```bash
+uv run --with marimo --with altair marimo edit examples/demo.py
+# Answer "n" to sandbox mode to use locally installed package
 ```
