@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Benchmark script for stream_parser.py
+Benchmark script for crystfel_yasp parser
 
 Measures parsing performance in lines/second across different modes:
 - Skip reflections: Fastest mode for stats-only use cases
@@ -15,12 +15,9 @@ Usage:
 
 import argparse
 import os
-import sys
 import time
 
-# Ensure we can import from the scripts directory
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts'))
-from stream_parser import iter_chunks, HAS_NUMPY
+from crystfel_yasp.parser import iter_chunks, HAS_NUMPY
 
 
 def count_lines_in_chunks(filepath: str, num_chunks: int) -> int:
@@ -79,7 +76,7 @@ def benchmark_full_access(filepath: str, num_chunks: int) -> tuple:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Benchmark stream_parser.py performance'
+        description='Benchmark crystfel_yasp parser performance'
     )
     parser.add_argument('stream_file', help='Path to the stream file to benchmark')
     parser.add_argument('-n', '--chunks', type=int, default=1000,

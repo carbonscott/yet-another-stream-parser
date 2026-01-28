@@ -4,6 +4,7 @@
 #     "marimo",
 #     "numpy",
 #     "altair",
+#     "crystfel-yasp @ git+https://github.com/carbonscott/yet-another-stream-parser.git",
 # ]
 # ///
 
@@ -16,17 +17,11 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     import marimo as mo
-    import sys
     from pathlib import Path
 
-    project_root = Path(__file__).resolve().parent.parent
-    sys.path.insert(0, str(project_root / "scripts"))
-
     import numpy as np
-    from stream_parser import iter_chunks
-    from indexing import StreamIndex
-    from parallel_parse import parse_chunks_shared, REFL_COLUMNS
-    return StreamIndex, iter_chunks, mo, np, project_root
+    from crystfel_yasp import iter_chunks, StreamIndex, parse_chunks_shared, REFL_COLUMNS
+    return StreamIndex, iter_chunks, mo, np, parse_chunks_shared, REFL_COLUMNS, Path
 
 
 @app.cell
@@ -40,14 +35,15 @@ def _():
 
 
 @app.cell
-def _(project_root):
+def _(Path):
     # --- Path configuration (adjust for your environment) ---
+    project_root = Path(__file__).resolve().parent.parent
     INDEX_PATH = str(project_root / "benchmarks" / "ox112it2.stream.idx")
     ITER_STREAM = (
         "/sdf/data/lcls/ds/mfx/mfxl1025422/results/btx/streams/"
         "ox112it2.stream"
     )
-    return INDEX_PATH, ITER_STREAM
+    return INDEX_PATH, ITER_STREAM, project_root
 
 
 @app.cell(hide_code=True)

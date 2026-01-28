@@ -20,10 +20,8 @@ import time
 
 import numpy as np
 
-# Ensure we can import from the scripts directory
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts'))
-from indexing import StreamIndex
-from parallel_parse import parse_chunks_shared, parse_chunks_sequential
+from crystfel_yasp.indexing import StreamIndex
+from crystfel_yasp.parallel import parse_chunks_shared, parse_chunks_sequential
 
 
 def verify_correctness(seq_arr, seq_panels, par_arr, par_panels):
